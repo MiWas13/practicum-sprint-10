@@ -10,6 +10,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.ColorInt
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlin.random.Random
@@ -30,7 +32,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         val itemsRv: RecyclerView = findViewById(R.id.items_rv)
-        itemsRv.layoutManager = LinearLayoutManager(this)
+        itemsRv.layoutManager = GridLayoutManager(this, 3).apply {
+            spanSizeLookup = object : SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int {
+                    return if (position.mod(4) == 0) {
+                        3
+                    } else {
+                        1
+                    }
+                }
+            }
+        }
         itemsRv.adapter = adapter
     }
 
