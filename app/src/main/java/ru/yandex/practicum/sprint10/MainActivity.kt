@@ -21,10 +21,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        val data = (1..10).map {
+            ListElement.createRandomElement(id = it.toString())
+        }
+        val problem = mutableListOf(Problem())
+        val header = mutableListOf(Header("I'm Header"))
+
+        val items = header + data
+
         val adapter = MainActivityAdapter().apply {
-            items = (1..10).map {
-                ListElement.createRandomElement(id = it.toString())
-            }
+            this.items = items
+
+
             onListElementClickListener = OnListElementClickListener { item ->
                 Toast.makeText(this@MainActivity, "Click on ${item.name}", Toast.LENGTH_SHORT)
                     .show()
@@ -32,11 +40,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         val itemsRv: RecyclerView = findViewById(R.id.items_rv)
-        itemsRv.layoutManager = GridLayoutManager(this, 3).apply {
+        itemsRv.layoutManager = GridLayoutManager(this, 2).apply {
             spanSizeLookup = object : SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
-                    return if (position.mod(4) == 0) {
-                        3
+                    return if (items[position] is Header) {
+                        2
                     } else {
                         1
                     }
@@ -48,23 +56,59 @@ class MainActivity : AppCompatActivity() {
 
 }
 
-class MainActivityAdapter : RecyclerView.Adapter<ListElementViewHolder>() {
+class MainActivityAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    var items: List<ListElement> = emptyList()
+    companion object {
+        const val VIEW_TYPE_LIST_ELEMENT = 1
+        const val VIEW_TYPE_PROBLEM = 2
+        const val VIEW_TYPE_HEADER = 3
+    }
+
+    var items: List<Any> = emptyList()
     var onListElementClickListener: OnListElementClickListener? = null
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ListElementViewHolder {
-        return ListElementViewHolder(parent)
+    override fun getItemViewType(position: Int): Int {
+        val item = items[position]
+        return when (item) {
+            is ListElement -> VIEW_TYPE_LIST_ELEMENT
+            is Problem -> VIEW_TYPE_PROBLEM
+            is Header -> VIEW_TYPE_HEADER
+            else -> throw java.lang.IllegalStateException("Cannot find viewType for item $item")
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_LIST_ELEMENT -> ListElementViewHolder(parent)
+            VIEW_TYPE_PROBLEM -> ProblemViewHolder(parent)
+            VIEW_TYPE_HEADER -> HeaderViewHolder(parent)
+            else -> throw java.lang.IllegalStateException("Cannot create ViewHolder for viewType $viewType")
+        }
+
     }
 
     override fun getItemCount(): Int {
         return items.size
     }
 
-    override fun onBindViewHolder(holder: ListElementViewHolder, position: Int) {
-        holder.bind(items[position])
-        holder.itemView.setOnClickListener {
-            onListElementClickListener?.onListElementClick(items[position])
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = items[position]
+        when (item) {
+            is ListElement -> {
+                val listElementViewHolder: ListElementViewHolder = holder as ListElementViewHolder
+                listElementViewHolder.bind(item)
+                listElementViewHolder.itemView.setOnClickListener {
+                    onListElementClickListener?.onListElementClick(item)
+                }
+            }
+            is Problem -> {
+                val problemViewHolder: ProblemViewHolder = holder as ProblemViewHolder
+            }
+            is Header -> {
+                val headerViewHolder: HeaderViewHolder = holder as HeaderViewHolder
+                headerViewHolder.bind(item)
+            }
+            else -> throw java.lang.IllegalStateException("Cannot find viewType for item $item")
         }
     }
 
