@@ -6,14 +6,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.ColorInt
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
@@ -21,27 +25,61 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val data = (1..20).map {
-            ListElement.createRandomElement(id = it.toString())
-        }
+        val data = list1
+//            (1..20).map {
+//            ListElement.createRandomElement(id = it.toString())
+//        }
         val problem = mutableListOf(Problem())
         val header = mutableListOf(Header("I'm Header"))
 
-        val items = header + data
+        val items: MutableList<Any> = data.toMutableList()
 
         val adapter = MainActivityAdapter().apply {
             this.items = items
 
-
             onListElementClickListener = OnListElementClickListener { item ->
                 Toast.makeText(this@MainActivity, "Click on ${item.name}", Toast.LENGTH_SHORT)
                     .show()
+                val index = this.items.indexOf(item)
+                this.items.remove(item)
+                this.notifyItemRemoved(index)
             }
         }
+
+//        DiffUtil
 
         val itemsRv: RecyclerView = findViewById(R.id.items_rv)
         itemsRv.layoutManager = LinearLayoutManager(this)
         itemsRv.adapter = adapter
+
+
+        findViewById<Button>(R.id.load).setOnClickListener {
+            val oldItems = adapter.items
+            val newItems: MutableList<Any> = list2.toMutableList()
+            adapter.items = newItems
+            val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize(): Int {
+                    return oldItems.size
+                }
+
+                override fun getNewListSize(): Int {
+                    return newItems.size
+                }
+
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                    return (oldItems[oldItemPosition] as ListElement).id == (newItems[newItemPosition] as ListElement).id
+                }
+
+                override fun areContentsTheSame(
+                    oldItemPosition: Int,
+                    newItemPosition: Int
+                ): Boolean {
+                    return (oldItems[oldItemPosition] as ListElement) == (newItems[newItemPosition] as ListElement)
+                }
+
+            })
+            diffResult.dispatchUpdatesTo(adapter)
+        }
     }
 
 }
@@ -54,7 +92,7 @@ class MainActivityAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         const val VIEW_TYPE_HEADER = 3
     }
 
-    var items: List<Any> = emptyList()
+    var items: MutableList<Any> = mutableListOf()
     var onListElementClickListener: OnListElementClickListener? = null
 
     override fun getItemViewType(position: Int): Int {
