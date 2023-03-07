@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val data = (1..10).map {
+        val data = (1..20).map {
             ListElement.createRandomElement(id = it.toString())
         }
         val problem = mutableListOf(Problem())
@@ -40,17 +40,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val itemsRv: RecyclerView = findViewById(R.id.items_rv)
-        itemsRv.layoutManager = GridLayoutManager(this, 2).apply {
-            spanSizeLookup = object : SpanSizeLookup() {
-                override fun getSpanSize(position: Int): Int {
-                    return if (items[position] is Header) {
-                        2
-                    } else {
-                        1
-                    }
-                }
-            }
-        }
+        itemsRv.layoutManager = LinearLayoutManager(this)
         itemsRv.adapter = adapter
     }
 
